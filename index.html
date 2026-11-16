@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StudyBalance</title>
+  <meta name="description" content="Plánovač času na učenie podľa tvojho rozvrhu a termínov.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">StudyBalance</div>
+    <nav class="steps" aria-label="Kroky">
+      <button data-tab="schedule"><span class="num">1</span>Rozvrh</button>
+      <button data-tab="tasks"><span class="num">2</span>Povinnosti</button>
+      <button data-tab="plan"><span class="num">3</span>Plán</button>
+      <button data-tab="settings" class="settings-link">Nastavenia</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 1. Rozvrh -->
+    <section id="tab-schedule" class="tab">
+      <h1>Tvoj pravidelný týždeň</h1>
+      <p class="lead">Zapíš všetko, čo sa každý týždeň opakuje: prednášky, cvičenia, prácu, tréningy. Do týchto časov sa učenie nenaplánuje.</p>
+
+      <form id="schedule-form" class="row-form">
+        <label>Deň
+          <select name="day" required>
+            <option value="0">Pondelok</option><option value="1">Utorok</option><option value="2">Streda</option>
+            <option value="3">Štvrtok</option><option value="4">Piatok</option><option value="5">Sobota</option><option value="6">Nedeľa</option>
+          </select>
+        </label>
+        <label>Od <input type="time" name="start" required value="08:00"></label>
+        <label>Do <input type="time" name="end" required value="09:40"></label>
+        <label class="grow">Čo <input type="text" name="label" required placeholder="napr. Prednáška – Databázy"></label>
+        <div class="form-actions">
+          <button type="submit" class="primary">Pridať do rozvrhu</button>
+          <button type="button" id="schedule-delete" class="danger" hidden>Zmazať</button>
+          <button type="button" id="schedule-cancel" hidden>Zrušiť úpravu</button>
+        </div>
+        <p class="form-error" id="schedule-error" role="alert"></p>
+      </form>
+
+      <p class="hint">Kliknutím na položku v rozvrhu ju upravíš.</p>
+      <div id="schedule-week" class="week-wrap"></div>
+    </section>
+
+    <!-- 2. Povinnosti -->
+    <section id="tab-tasks" class="tab" hidden>
+      <h1>Úlohy a skúšky</h1>
+      <p class="lead">Pridaj termín a odhad, koľko hodín ti príprava zaberie. Úlohy plánujeme čo najskôr, skúšky rozložíme do dní pred termínom.</p>
+
+      <form id="task-form" class="row-form">
+        <label class="grow">Názov <input type="text" name="title" required placeholder="napr. Seminárna práca z ekonómie"></label>
+        <label>Typ
+          <select name="type">
+            <option value="task">Úloha / zadanie</option>
+            <option value="exam">Skúška</option>
+          </select>
+        </label>
+        <label>Termín <input type="date" name="deadline" required></label>
+        <label>Odhad (h) <input type="number" name="hours" required min="0.5" max="200" step="0.5" value="4"></label>
+        <div class="form-actions">
+          <button type="submit" class="primary">Pridať povinnosť</button>
+          <button type="button" id="task-cancel" hidden>Zrušiť úpravu</button>
+        </div>
+        <p class="form-error" id="task-error" role="alert"></p>
+      </form>
+
+      <ul id="task-list" class="task-list"></ul>
+    </section>
+
+    <!-- 3. Plán -->
+    <section id="tab-plan" class="tab" hidden>
+      <h1>Študijný plán</h1>
+      <p class="lead" id="plan-status"></p>
+
+      <div class="plan-actions">
+        <button id="generate" class="primary">Navrhnúť plán</button>
+        <button id="confirm" hidden>Potvrdiť plán</button>
+      </div>
+
+      <div id="warnings"></div>
+
+      <div class="plan-info">
+        <div id="priorities"></div>
+        <div id="progress"></div>
+      </div>
+
+      <div class="week-nav">
+        <button id="week-prev" aria-label="Predchádzajúci týždeň">‹</button>
+        <button id="week-today">Tento týždeň</button>
+        <button id="week-next" aria-label="Ďalší týždeň">›</button>
+        <span id="week-label"></span>
+      </div>
+      <div id="plan-week" class="week-wrap"></div>
+
+      <div class="ai-panel">
+        <h2>Vysvetlenie od AI</h2>
+        <p class="hint" id="ai-hint">AI nemení časy v pláne, iba ho vysvetlí a dá tipy.</p>
+        <button id="ai-explain">Vysvetliť plán</button>
+        <div id="ai-output" class="ai-output" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Nastavenia -->
+    <section id="tab-settings" class="tab" hidden>
+      <h1>Nastavenia</h1>
+      <form id="settings-form" class="settings-grid">
+        <fieldset>
+          <legend>Kedy sa môžeš učiť</legend>
+          <label>Najskôr od <input type="time" name="dayStart" required></label>
+          <label>Najneskôr do <input type="time" name="dayEnd" required></label>
+          <label>Najviac hodín učenia za deň <input type="number" name="maxPerDay" min="1" max="16" step="0.5" required></label>
+        </fieldset>
+        <fieldset>
+          <legend>Študijné bloky</legend>
+          <label>Najkratší blok (min) <input type="number" name="minBlock" min="15" max="240" step="15" required></label>
+          <label>Najdlhší blok (min) <input type="number" name="maxBlock" min="30" max="300" step="15" required></label>
+          <label>Prestávka medzi blokmi (min) <input type="number" name="breakMin" min="0" max="60" step="5" required></label>
+        </fieldset>
+        <fieldset>
+          <legend>Gemini API (nepovinné)</legend>
+          <label>API kľúč <input type="password" name="geminiKey" autocomplete="off" placeholder="z aistudio.google.com"></label>
+          <label>Model <input type="text" name="geminiModel" required></label>
+          <p class="hint">Kľúč sa uloží iba v tomto prehliadači a posiela sa len priamo do Google. Pri bezplatnom kľúči môže Google použiť odoslané údaje na zlepšovanie svojich služieb, preto do názvov nepíš osobné údaje.</p>
+        </fieldset>
+        <div class="form-actions">
+          <button type="submit" class="primary">Uložiť nastavenia</button>
+          <span id="settings-saved" class="saved" aria-live="polite"></span>
+        </div>
+        <p class="form-error" id="settings-error" role="alert"></p>
+      </form>
+
+      <div class="danger-zone">
+        <h2>Údaje</h2>
+        <p class="hint">Všetko je uložené iba v tomto prehliadači.</p>
+        <button id="reset" class="danger">Vymazať všetky údaje</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="block-dialog">
+    <form method="dialog" id="block-form">
+      <h2 id="block-title"></h2>
+      <label>Dátum <input type="date" name="date" required></label>
+      <div class="two">
+        <label>Od <input type="time" name="start" required></label>
+        <label>Do <input type="time" name="end" required></label>
+      </div>
+      <label class="check" id="block-done-wrap"><input type="checkbox" name="done"> Blok som splnil(a)</label>
+      <p class="form-error" id="block-error" role="alert"></p>
+      <div class="form-actions">
+        <button value="save" class="primary">Uložiť blok</button>
+        <button value="delete" class="danger" formnovalidate>Zmazať blok</button>
+        <button value="cancel" formnovalidate>Zrušiť</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/planner.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
