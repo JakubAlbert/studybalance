@@ -15,5 +15,6 @@ npm-debug.log*
 .env.*
 *.key
 
-# Claude Code – lokálne nastavenia
-.claude/settings.local.json
+# Lokálne nastavenia
+.claude/
+CLAUDE.md
